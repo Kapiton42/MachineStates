@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Smc">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Downloads/smc_6_6_0/bin/Smc.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
