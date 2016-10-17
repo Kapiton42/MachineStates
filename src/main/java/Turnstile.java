@@ -1,76 +1,98 @@
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Turnstile {
   TurnstileContext turnstileContext = new TurnstileContext(this);
-  Map<String, String> map = new HashMap<>();
+  private List<String> groups;
+  private final List<Character> operators = new ArrayList<>();
+  private final List<String> types = new ArrayList<>();
 
-  private StringBuilder temp = new StringBuilder();
+  private StringBuilder temp;
+
+  public Turnstile() {
+    operators.add('%');
+    operators.add('*');
+    operators.add('/');
+
+    types.add("float");
+    types.add("int");
+    types.add("long");
+  }
 
   public static void main(String[] args) {
     Turnstile turnstile = new Turnstile();
-    turnstile.getMap("int a=123");
+    System.out.println(turnstile.getGroups("long mE=2;"));
   }
 
-  public Map<String, String> getMap(String string) {
+  public List<String> getGroups(String string) {
     char[] chars = string.toCharArray();
-    turnstileContext.getState();
+    groups = new ArrayList<>();
+    temp = new StringBuilder();
+    turnstileContext.setState(TurnstileContext.MainMap.Type);
+
     for (char aChar : chars) {
       turnstileContext.nextSymbol(aChar);
     }
-    return turnstileContext.getState().getName().equals("Failed") ? null : map;
+    return turnstileContext.getState().getName().equals("MainMap.Final") ? groups : null;
   }
 
-  public void nextFirstLiteralSymbol(char symbol) {
-    if(symbol == ';') {
-      turnstileContext.nextState();
-    } else {
-      temp.append(symbol);
+  public boolean isValidNextTypeSymbol(char symbol) {
+    boolean returnBoolean = false;
+
+    if (temp.length() < 5 && symbol > 'a' && symbol < 'z') {
+      for (String type : types) {
+        if(temp.length() + 1 == type.length() && (temp.toString() + symbol).equals(type)) {
+          returnBoolean = true;
+        } else {
+          if(temp.length() + 1 < type.length()) {
+            if (type.substring(0, temp.length() + 1).equals(temp.toString() + symbol)) {
+              returnBoolean = true;
+            }
+          }
+        }
+      }
     }
+
+    return returnBoolean;
   }
 
-  public void saveFirstLiteral() {
-    map.put("first_literal", temp.toString());
-    temp = new StringBuilder();
+  public boolean isValidNextNameSymbol(char symbol) {
+    return isValidNextLiteralSymbol(symbol);
   }
 
-  public boolean isValidFirstLiteral() {
-    return temp.toString().length() < 16;
+  public boolean isValidNextLiteralSymbol(char symbol) {
+    return temp.length() < 16 && ((symbol >= 'A' && symbol <= 'z') || (symbol >= '0' && symbol <= '9'));
   }
 
-  public void nextNameSymbol(char symbol) {
-    if(symbol == '=') {
-      turnstileContext.nextState();
-    } else {
-      temp.append(symbol);
-    }
+  public void appendSymbol(char symbol) {
+    temp.append(symbol);
   }
 
-  public void saveName() {
-    map.put("name", temp.toString());
-    temp = new StringBuilder();
+  public boolean isValidNextOperatorSymbol(char symbol) {
+    return operators.contains(symbol) && temp.length() == 0;
   }
 
-  public boolean isValidName() {
-    return true;
+  public void saveGroup() {
+    groups.add(temp.toString());
+    temp = new StringBuilder();  }
+
+  public boolean isValidNextSecondLiteralSymbol(char symbol) {
+    return temp.length() < 16 && ((symbol >= 'A' && symbol <= 'z') || (symbol >= '0' && symbol <= '9'));
   }
 
-  public void nextTypeSymbol(char symbol) {
-    if(symbol == ' ') {
-      turnstileContext.nextState();
-    } else {
-      temp.append(symbol);
-    }
+  public boolean isValidNextLiteralNumberSymbol(char symbol) {
+    return temp.length() < 16 && symbol >= '0' && symbol <= '9';
   }
 
-  public boolean isValidType() {
-    String type = temp.toString();
-    return Objects.equals(type, "int") || Objects.equals(type, "float") || Objects.equals(type, "long");
+  public boolean isValidNextSecondLiteralNumberSymbol(char symbol) {
+    return temp.length() < 16 && symbol >= '0' && symbol <= '9';
   }
 
-  public void saveType() {
-    map.put("type", temp.toString());
-    temp = new StringBuilder();
+  public boolean notEmpty() {
+    return temp.length() != 0;
+  }
+
+  public boolean rightType() {
+    return types.contains(temp.toString());
   }
 }
